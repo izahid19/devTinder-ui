@@ -1,4 +1,3 @@
-// src/pages/ProfilePage.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { BASE_URL } from "../utils/config";
@@ -10,8 +9,11 @@ import { addUser } from "../utils/userSlice";
 const ProfilePage = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user);
-  const [isEditing, setIsEditing] = useState(false);
+
   const [isSaving, setIsSaving] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+
   const [formData, setFormData] = useState({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
@@ -20,11 +22,12 @@ const ProfilePage = () => {
     gender: user?.gender || "",
     profilePicture: user?.profilePicture || "",
     hobbies: user?.hobbies || [],
-    desc: user?.desc || ""
+    desc: user?.desc || "",
   });
+
   const [newHobby, setNewHobby] = useState("");
 
-  // ✅ Utility: Get only changed fields
+  // ✅ Utility: Compare changes
   const getChangedFields = (original, updated) => {
     const changes = {};
     for (let key in updated) {
@@ -35,7 +38,7 @@ const ProfilePage = () => {
     return changes;
   };
 
-  // ✅ Update profile (only changed fields)
+  // ✅ Update profile
   const updateProfile = async () => {
     try {
       setIsSaving(true);
@@ -43,24 +46,32 @@ const ProfilePage = () => {
 
       if (Object.keys(changes).length === 0) {
         successToaster("No changes to update");
-        setIsEditing(false);
         setIsSaving(false);
         return;
       }
 
       const response = await axios.patch(`${BASE_URL}/profile/update`, changes);
       dispatch(addUser(response.data));
-      setIsEditing(false);
       successToaster("Profile updated successfully!");
+      setHasChanges(false);
     } catch (error) {
       errorToaster("Failed to update profile");
       console.error("Error updating profile:", error);
     } finally {
       setIsSaving(false);
+      setShowConfirmModal(false);
     }
   };
 
-  // ✅ Sync formData with user from Redux
+  // ✅ Watch for changes in form data
+  useEffect(() => {
+    if (user) {
+      const changes = getChangedFields(user, formData);
+      setHasChanges(Object.keys(changes).length > 0);
+    }
+  }, [formData, user]);
+
+  // ✅ Sync with Redux user
   useEffect(() => {
     if (user) {
       setFormData({
@@ -71,8 +82,9 @@ const ProfilePage = () => {
         gender: user.gender || "",
         profilePicture: user.profilePicture || "",
         hobbies: user.hobbies || [],
-        desc: user.desc || ""
+        desc: user.desc || "",
       });
+      setHasChanges(false);
     }
   }, [user]);
 
@@ -80,7 +92,7 @@ const ProfilePage = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "age" ? parseInt(value) || "" : value
+      [name]: name === "age" ? parseInt(value) || "" : value,
     }));
   };
 
@@ -88,7 +100,7 @@ const ProfilePage = () => {
     if (newHobby.trim() && !formData.hobbies.includes(newHobby.trim())) {
       setFormData((prev) => ({
         ...prev,
-        hobbies: [...prev.hobbies, newHobby.trim()]
+        hobbies: [...prev.hobbies, newHobby.trim()],
       }));
       setNewHobby("");
     }
@@ -97,7 +109,7 @@ const ProfilePage = () => {
   const handleRemoveHobby = (hobbyToRemove) => {
     setFormData((prev) => ({
       ...prev,
-      hobbies: prev.hobbies.filter((hobby) => hobby !== hobbyToRemove)
+      hobbies: prev.hobbies.filter((hobby) => hobby !== hobbyToRemove),
     }));
   };
 
@@ -110,9 +122,9 @@ const ProfilePage = () => {
       gender: user.gender || "",
       profilePicture: user.profilePicture || "",
       hobbies: user.hobbies || [],
-      desc: user.desc || ""
+      desc: user.desc || "",
     });
-    setIsEditing(false);
+    setHasChanges(false);
   };
 
   if (!user) {
@@ -129,13 +141,11 @@ const ProfilePage = () => {
     <Curve>
       <div className="min-h-screen bg-base-100 py-8">
         <div className="container mx-auto px-4 max-w-6xl">
-          {/* Header Section */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-primary mb-2">My Profile</h1>
             <p className="text-base-content/70">Manage your personal information</p>
           </div>
 
-          {/* Main Profile Card */}
           <div className="card bg-base-200 shadow-2xl">
             <div className="card-body p-8">
               <div className="flex flex-col lg:flex-row gap-8">
@@ -144,7 +154,7 @@ const ProfilePage = () => {
                   <div className="avatar">
                     <div className="w-32 h-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-4 mx-auto">
                       <img
-                        src={isEditing ? formData.profilePicture : user?.profilePicture}
+                        src={formData.profilePicture}
                         alt="Profile"
                         className="object-cover w-full h-full"
                         onError={(e) => {
@@ -155,77 +165,49 @@ const ProfilePage = () => {
                     </div>
                   </div>
 
-                  {isEditing && (
-                    <div className="form-control mt-4">
-                      <input
-                        type="url"
-                        name="profilePicture"
-                        value={formData.profilePicture}
-                        onChange={handleInputChange}
-                        className="input input-bordered input-sm w-full max-w-xs"
-                        placeholder="Profile picture URL"
-                      />
-                    </div>
-                  )}
-
-                  {!isEditing && (
-                    <div className="mt-4">
-                      <h2 className="text-2xl font-bold text-base-content">
-                        {user?.firstName} {user?.lastName}
-                      </h2>
-                      <div className="badge badge-primary mt-2 capitalize">
-                        {user?.gender || "Not specified"}
-                      </div>
-                    </div>
-                  )}
+                  <div className="form-control mt-4">
+                    <input
+                      type="url"
+                      name="profilePicture"
+                      value={formData.profilePicture}
+                      onChange={handleInputChange}
+                      className="input input-bordered input-sm w-full max-w-xs"
+                      placeholder="Profile picture URL"
+                    />
+                  </div>
                 </div>
 
-                {/* Profile Information */}
+                {/* Info Section */}
                 <div className="flex-grow">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* First Name */}
                     <div className="form-control">
                       <label className="label">
                         <span className="label-text font-semibold">First Name</span>
                       </label>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          name="firstName"
-                          value={formData.firstName}
-                          onChange={handleInputChange}
-                          className="input input-bordered w-full"
-                          placeholder="Enter first name"
-                        />
-                      ) : (
-                        <div className="p-3 bg-base-100 rounded-lg border">
-                          {user?.firstName || "Not provided"}
-                        </div>
-                      )}
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        className="input input-bordered w-full"
+                        placeholder="Enter first name"
+                      />
                     </div>
 
-                    {/* Last Name */}
                     <div className="form-control">
                       <label className="label">
                         <span className="label-text font-semibold">Last Name</span>
                       </label>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          name="lastName"
-                          value={formData.lastName}
-                          onChange={handleInputChange}
-                          className="input input-bordered w-full"
-                          placeholder="Enter last name"
-                        />
-                      ) : (
-                        <div className="p-3 bg-base-100 rounded-lg border">
-                          {user?.lastName || "Not provided"}
-                        </div>
-                      )}
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        className="input input-bordered w-full"
+                        placeholder="Enter last name"
+                      />
                     </div>
 
-                    {/* Email (Disabled) */}
                     <div className="form-control">
                       <label className="label">
                         <span className="label-text font-semibold">Email</span>
@@ -239,54 +221,39 @@ const ProfilePage = () => {
                       />
                     </div>
 
-                    {/* Age */}
                     <div className="form-control">
                       <label className="label">
                         <span className="label-text font-semibold">Age</span>
                       </label>
-                      {isEditing ? (
-                        <input
-                          type="number"
-                          name="age"
-                          value={formData.age}
-                          onChange={handleInputChange}
-                          className="input input-bordered w-full"
-                          min="1"
-                          max="120"
-                          placeholder="Enter age"
-                        />
-                      ) : (
-                        <div className="p-3 bg-base-100 rounded-lg border">
-                          {user?.age || "Not provided"}
-                        </div>
-                      )}
+                      <input
+                        type="number"
+                        name="age"
+                        value={formData.age}
+                        onChange={handleInputChange}
+                        className="input input-bordered w-full"
+                        min="1"
+                        max="120"
+                        placeholder="Enter age"
+                      />
                     </div>
 
-                    {/* Gender */}
                     <div className="form-control">
                       <label className="label">
                         <span className="label-text font-semibold">Gender</span>
                       </label>
-                      {isEditing ? (
-                        <select
-                          name="gender"
-                          value={formData.gender}
-                          onChange={handleInputChange}
-                          className="select select-bordered w-full"
-                        >
-                          <option value="">Select gender</option>
-                          <option value="male">Male</option>
-                          <option value="female">Female</option>
-                          <option value="other">Other</option>
-                        </select>
-                      ) : (
-                        <div className="p-3 bg-base-100 rounded-lg border capitalize">
-                          {user?.gender || "Not specified"}
-                        </div>
-                      )}
+                      <select
+                        name="gender"
+                        value={formData.gender}
+                        onChange={handleInputChange}
+                        className="select select-bordered w-full"
+                      >
+                        <option value="">Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
                     </div>
 
-                    {/* Created Date */}
                     <div className="form-control">
                       <label className="label">
                         <span className="label-text font-semibold">Member Since</span>
@@ -295,30 +262,24 @@ const ProfilePage = () => {
                         {new Date(user?.createdAt).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "long",
-                          day: "numeric"
+                          day: "numeric",
                         })}
                       </div>
                     </div>
                   </div>
 
-                  {/* Description */}
+                  {/* About */}
                   <div className="form-control mt-6">
                     <label className="label">
                       <span className="label-text font-semibold">About Me</span>
                     </label>
-                    {isEditing ? (
-                      <textarea
-                        name="desc"
-                        value={formData.desc}
-                        onChange={handleInputChange}
-                        className="textarea textarea-bordered h-24 w-full"
-                        placeholder="Tell us about yourself..."
-                      ></textarea>
-                    ) : (
-                      <div className="p-3 bg-base-100 rounded-lg border min-h-[96px]">
-                        {user?.desc || "No description provided"}
-                      </div>
-                    )}
+                    <textarea
+                      name="desc"
+                      value={formData.desc}
+                      onChange={handleInputChange}
+                      className="textarea textarea-bordered h-24 w-full"
+                      placeholder="Tell us about yourself..."
+                    ></textarea>
                   </div>
 
                   {/* Hobbies */}
@@ -326,93 +287,60 @@ const ProfilePage = () => {
                     <label className="label">
                       <span className="label-text font-semibold">Hobbies & Interests</span>
                     </label>
-
-                    {isEditing ? (
-                      <div>
-                        <div className="flex gap-2 mb-3">
-                          <input
-                            type="text"
-                            value={newHobby}
-                            onChange={(e) => setNewHobby(e.target.value)}
-                            className="input input-bordered flex-1"
-                            placeholder="Add a hobby..."
-                            onKeyPress={(e) => e.key === "Enter" && handleAddHobby()}
-                          />
-                          <button
-                            type="button"
-                            onClick={handleAddHobby}
-                            className="btn btn-primary"
-                          >
-                            Add
-                          </button>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {formData.hobbies.map((hobby, index) => (
-                            <div key={index} className="badge badge-primary gap-2 p-3">
-                              {hobby}
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveHobby(hobby)}
-                                className="btn btn-ghost btn-xs text-white"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          ))}
-                        </div>
+                    <div>
+                      <div className="flex gap-2 mb-3">
+                        <input
+                          type="text"
+                          value={newHobby}
+                          onChange={(e) => setNewHobby(e.target.value)}
+                          className="input input-bordered flex-1"
+                          placeholder="Add a hobby..."
+                          onKeyPress={(e) => e.key === "Enter" && handleAddHobby()}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddHobby}
+                          className="btn btn-primary"
+                        >
+                          Add
+                        </button>
                       </div>
-                    ) : (
-                      <div className="p-3 bg-base-100 rounded-lg border">
-                        {user?.hobbies?.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {user.hobbies.map((hobby, index) => (
-                              <span
-                                key={index}
-                                className="badge badge-primary badge-outline"
-                              >
-                                {hobby}
-                              </span>
-                            ))}
+                      <div className="flex flex-wrap gap-2">
+                        {formData.hobbies.map((hobby, index) => (
+                          <div key={index} className="badge badge-primary gap-2 p-3">
+                            {hobby}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveHobby(hobby)}
+                              className="btn btn-ghost btn-xs text-white"
+                            >
+                              ✕
+                            </button>
                           </div>
-                        ) : (
-                          <span className="text-base-content/60">
-                            No hobbies added yet
-                          </span>
-                        )}
+                        ))}
                       </div>
-                    )}
+                    </div>
                   </div>
 
-                  {/* ✅ Action Buttons moved to bottom */}
+                  {/* ✅ Buttons */}
                   <div className="flex justify-end gap-3 mt-10">
-                    {!isEditing ? (
-                      <button
-                        className="btn btn-primary"
-                        onClick={() => setIsEditing(true)}
-                      >
-                        Edit Profile
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          className="btn btn-success"
-                          onClick={updateProfile}
-                          disabled={isSaving}
-                        >
-                          {isSaving && (
-                            <span className="loading loading-spinner loading-sm mr-2"></span>
-                          )}
-                          Save Changes
-                        </button>
-                        <button
-                          className="btn btn-ghost"
-                          onClick={handleCancel}
-                          disabled={isSaving}
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
+                    <button
+                      className="btn btn-success"
+                      onClick={() => setShowConfirmModal(true)}
+                      disabled={!hasChanges || isSaving}
+                    >
+                      {isSaving && (
+                        <span className="loading loading-spinner loading-sm mr-2"></span>
+                      )}
+                      Save Changes
+                    </button>
+                    <button
+                      className="btn btn-ghost"
+                      onClick={handleCancel}
+                      disabled={!hasChanges || isSaving}
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
               </div>
@@ -420,6 +348,37 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
+
+      {/* ✅ Confirmation Modal */}
+      {showConfirmModal && (
+        <dialog open className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">Confirm Save</h3>
+            <p className="py-4">
+              Are you sure you want to save the changes to your profile?
+            </p>
+            <div className="modal-action">
+              <button
+                className="btn btn-success"
+                onClick={updateProfile}
+                disabled={isSaving}
+              >
+                {isSaving && (
+                  <span className="loading loading-spinner loading-sm mr-2"></span>
+                )}
+                Yes, Save
+              </button>
+              <button
+                className="btn btn-ghost"
+                onClick={() => setShowConfirmModal(false)}
+                disabled={isSaving}
+              >
+                No, Cancel
+              </button>
+            </div>
+          </div>
+        </dialog>
+      )}
     </Curve>
   );
 };
