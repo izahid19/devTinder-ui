@@ -51,9 +51,8 @@ const SignUpPage = () => {
       dispatch(addUser(response?.data?.data));
 
       // ✅ Show success toaster
-      successToaster("Signup successful! Redirecting...", {
-        onClose: () => navigate("/login"),
-      });
+      successToaster("Signup successful! Redirecting...");
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       console.error(err);
       if (err.name === "ValidationError") {
@@ -74,16 +73,16 @@ const SignUpPage = () => {
 
   return (
     <Curve>
-      <div className="flex justify-center items-center mt-10">
-        <div className="w-96 min-h-[520px] rounded-2xl bg-neutral text-white shadow-2xl flex flex-col">
-          <div className="p-6 flex flex-col gap-4 flex-grow">
+      <div className="flex justify-center items-center mt-10 px-4">
+        <div className="card w-96 bg-base-200 shadow-2xl rounded-2xl text-base-content">
+          <div className="card-body">
             <h2 className="text-3xl font-bold text-center">Sign Up</h2>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4 flex-grow">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-4">
               {/* First Name */}
-              <fieldset className="flex flex-col">
-                <label htmlFor="firstName" className="mb-1 font-medium">
-                  First Name
+              <fieldset className="form-control">
+                <label htmlFor="firstName" className="label">
+                  <span className="label-text">First Name</span>
                 </label>
                 <input
                   id="firstName"
@@ -91,18 +90,20 @@ const SignUpPage = () => {
                   type="text"
                   value={form.firstName}
                   onChange={handleChange}
-                  className="input input-bordered text-black"
-                  placeholder="Enter First Name"
+                  className="input input-bordered w-full bg-base-100 text-base-content"
+                  placeholder="Enter your first name"
                 />
                 {errors.firstName && (
-                  <div className="text-red-400 text-sm mt-1">{errors.firstName}</div>
+                  <span className="text-error text-sm mt-1">
+                    {errors.firstName}
+                  </span>
                 )}
               </fieldset>
 
               {/* Last Name */}
-              <fieldset className="flex flex-col">
-                <label htmlFor="lastName" className="mb-1 font-medium">
-                  Last Name
+              <fieldset className="form-control">
+                <label htmlFor="lastName" className="label">
+                  <span className="label-text">Last Name</span>
                 </label>
                 <input
                   id="lastName"
@@ -110,18 +111,20 @@ const SignUpPage = () => {
                   type="text"
                   value={form.lastName}
                   onChange={handleChange}
-                  className="input input-bordered text-black"
-                  placeholder="Enter Last Name"
+                  className="input input-bordered w-full bg-base-100 text-base-content"
+                  placeholder="Enter your last name"
                 />
                 {errors.lastName && (
-                  <div className="text-red-400 text-sm mt-1">{errors.lastName}</div>
+                  <span className="text-error text-sm mt-1">
+                    {errors.lastName}
+                  </span>
                 )}
               </fieldset>
 
               {/* Email */}
-              <fieldset className="flex flex-col">
-                <label htmlFor="emailId" className="mb-1 font-medium">
-                  Email
+              <fieldset className="form-control">
+                <label htmlFor="emailId" className="label">
+                  <span className="label-text">Email</span>
                 </label>
                 <input
                   id="emailId"
@@ -129,18 +132,20 @@ const SignUpPage = () => {
                   type="email"
                   value={form.emailId}
                   onChange={handleChange}
-                  className="input input-bordered text-black"
-                  placeholder="Enter Email"
+                  className="input input-bordered w-full bg-base-100 text-base-content"
+                  placeholder="Enter your email"
                 />
                 {errors.emailId && (
-                  <div className="text-red-400 text-sm mt-1">{errors.emailId}</div>
+                  <span className="text-error text-sm mt-1">
+                    {errors.emailId}
+                  </span>
                 )}
               </fieldset>
 
               {/* Password */}
-              <fieldset className="flex flex-col">
-                <label htmlFor="password" className="mb-1 font-medium">
-                  Password
+              <fieldset className="form-control">
+                <label htmlFor="password" className="label">
+                  <span className="label-text">Password</span>
                 </label>
                 <input
                   id="password"
@@ -148,18 +153,20 @@ const SignUpPage = () => {
                   type="password"
                   value={form.password}
                   onChange={handleChange}
-                  className="input input-bordered text-black"
-                  placeholder="Enter Password"
+                  className="input input-bordered w-full bg-base-100 text-base-content"
+                  placeholder="Enter your password"
                 />
                 {errors.password && (
-                  <div className="text-red-400 text-sm mt-1">{errors.password}</div>
+                  <span className="text-error text-sm mt-1">
+                    {errors.password}
+                  </span>
                 )}
               </fieldset>
 
-              <div className="flex justify-center mt-4">
+              <div className="flex justify-center mt-2">
                 <button
                   type="submit"
-                  className="btn w-32 bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="btn btn-primary w-32"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Signing up..." : "Sign Up"}
@@ -167,11 +174,12 @@ const SignUpPage = () => {
               </div>
             </form>
 
-            <div className="text-center mt-4 text-sm">
+            {/* ✅ Login Link */}
+            <div className="text-center mt-4 text-sm opacity-80">
               Already have an account?{" "}
               <span
                 onClick={() => navigate("/login")}
-                className="underline cursor-pointer hover:text-blue-300"
+                className="underline cursor-pointer hover:text-primary"
               >
                 Login
               </span>
