@@ -152,7 +152,7 @@ const Connections = () => {
                       </div>
 
                       {/* Actions */}
-                      <div className="card-actions justify-center mt-4 w-full">
+                      {/* <div className="card-actions justify-center mt-4 w-full">
                         <button
                           className="btn btn-primary btn-sm w-1/2"
                           onClick={() =>
@@ -166,20 +166,7 @@ const Connections = () => {
                         >
                           💬 Message
                         </button>
-                        <button
-                          className="btn btn-secondary btn-sm w-1/2"
-                          onClick={() =>
-                            handleViewProfile(
-                              connectedUser?._id,
-                              `${connectedUser?.firstName || "Unknown"} ${
-                                connectedUser?.lastName || ""
-                              }`
-                            )
-                          }
-                        >
-                          👤 Profile
-                        </button>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 )
