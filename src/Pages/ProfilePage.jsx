@@ -39,7 +39,6 @@ const ProfilePage = () => {
   const updateProfile = async () => {
     try {
       setIsSaving(true);
-
       const changes = getChangedFields(user, formData);
 
       if (Object.keys(changes).length === 0) {
@@ -79,15 +78,15 @@ const ProfilePage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: name === "age" ? (parseInt(value) || "") : value
+      [name]: name === "age" ? parseInt(value) || "" : value
     }));
   };
 
   const handleAddHobby = () => {
     if (newHobby.trim() && !formData.hobbies.includes(newHobby.trim())) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         hobbies: [...prev.hobbies, newHobby.trim()]
       }));
@@ -96,9 +95,9 @@ const ProfilePage = () => {
   };
 
   const handleRemoveHobby = (hobbyToRemove) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      hobbies: prev.hobbies.filter(hobby => hobby !== hobbyToRemove)
+      hobbies: prev.hobbies.filter((hobby) => hobby !== hobbyToRemove)
     }));
   };
 
@@ -139,54 +138,23 @@ const ProfilePage = () => {
           {/* Main Profile Card */}
           <div className="card bg-base-200 shadow-2xl">
             <div className="card-body p-8">
-              
-              {/* Action Buttons */}
-              <div className="flex justify-end mb-6">
-                {!isEditing ? (
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    Edit Profile
-                  </button>
-                ) : (
-                  <div className="flex gap-2">
-                    <button
-                      className="btn btn-success"
-                      onClick={updateProfile}
-                      disabled={isSaving}
-                    >
-                      {isSaving && <span className="loading loading-spinner loading-sm mr-2"></span>}
-                      Save Changes
-                    </button>
-                    <button
-                      className="btn btn-ghost"
-                      onClick={handleCancel}
-                      disabled={isSaving}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                )}
-              </div>
-
               <div className="flex flex-col lg:flex-row gap-8">
-                
                 {/* Profile Picture Section */}
                 <div className="flex-shrink-0 text-center">
                   <div className="avatar">
                     <div className="w-32 h-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-4 mx-auto">
-                      <img 
-                        src={isEditing ? formData.profilePicture : user?.profilePicture} 
+                      <img
+                        src={isEditing ? formData.profilePicture : user?.profilePicture}
                         alt="Profile"
                         className="object-cover w-full h-full"
                         onError={(e) => {
-                          e.target.src = "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp";
+                          e.target.src =
+                            "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp";
                         }}
                       />
                     </div>
                   </div>
-                  
+
                   {isEditing && (
                     <div className="form-control mt-4">
                       <input
@@ -257,25 +225,18 @@ const ProfilePage = () => {
                       )}
                     </div>
 
-                    {/* Email */}
+                    {/* Email (Disabled) */}
                     <div className="form-control">
                       <label className="label">
                         <span className="label-text font-semibold">Email</span>
                       </label>
-                      {isEditing ? (
-                        <input
-                          type="email"
-                          name="emailId"
-                          value={formData.emailId}
-                          onChange={handleInputChange}
-                          className="input input-bordered w-full"
-                          placeholder="Enter email address"
-                        />
-                      ) : (
-                        <div className="p-3 bg-base-100 rounded-lg border">
-                          {user?.emailId}
-                        </div>
-                      )}
+                      <input
+                        type="email"
+                        name="emailId"
+                        value={formData.emailId}
+                        disabled
+                        className="input input-bordered w-full bg-base-100 cursor-not-allowed opacity-70"
+                      />
                     </div>
 
                     {/* Age */}
@@ -365,7 +326,7 @@ const ProfilePage = () => {
                     <label className="label">
                       <span className="label-text font-semibold">Hobbies & Interests</span>
                     </label>
-                    
+
                     {isEditing ? (
                       <div>
                         <div className="flex gap-2 mb-3">
@@ -405,15 +366,52 @@ const ProfilePage = () => {
                         {user?.hobbies?.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
                             {user.hobbies.map((hobby, index) => (
-                              <span key={index} className="badge badge-primary badge-outline">
+                              <span
+                                key={index}
+                                className="badge badge-primary badge-outline"
+                              >
                                 {hobby}
                               </span>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-base-content/60">No hobbies added yet</span>
+                          <span className="text-base-content/60">
+                            No hobbies added yet
+                          </span>
                         )}
                       </div>
+                    )}
+                  </div>
+
+                  {/* ✅ Action Buttons moved to bottom */}
+                  <div className="flex justify-end gap-3 mt-10">
+                    {!isEditing ? (
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => setIsEditing(true)}
+                      >
+                        Edit Profile
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          className="btn btn-success"
+                          onClick={updateProfile}
+                          disabled={isSaving}
+                        >
+                          {isSaving && (
+                            <span className="loading loading-spinner loading-sm mr-2"></span>
+                          )}
+                          Save Changes
+                        </button>
+                        <button
+                          className="btn btn-ghost"
+                          onClick={handleCancel}
+                          disabled={isSaving}
+                        >
+                          Cancel
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
