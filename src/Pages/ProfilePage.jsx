@@ -6,6 +6,9 @@ import Curve from "../components/RouteAnimation/Curve";
 import { useDispatch, useSelector } from "react-redux";
 import { addUser } from "../utils/userSlice";
 
+// Always include credentials for JWT cookies
+axios.defaults.withCredentials = true;
+
 const ProfilePage = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user);
@@ -27,7 +30,7 @@ const ProfilePage = () => {
 
   const [newHobby, setNewHobby] = useState("");
 
-  // ✅ Utility: Compare changes
+  // ✅ Compare original vs current form data
   const getChangedFields = (original, updated) => {
     const changes = {};
     for (let key in updated) {
@@ -38,32 +41,31 @@ const ProfilePage = () => {
     return changes;
   };
 
-  // ✅ Update profile
+  // ✅ Save (PUT)
   const updateProfile = async () => {
     try {
       setIsSaving(true);
-      const changes = getChangedFields(user, formData);
 
-      if (Object.keys(changes).length === 0) {
-        successToaster("No changes to update");
-        setIsSaving(false);
-        return;
-      }
+      // remove emailId before sending to backend (read-only field)
+      const { emailId, ...dataToSend } = formData;
 
-      const response = await axios.patch(`${BASE_URL}/profile/update`, changes);
-      dispatch(addUser(response.data));
+      const response = await axios.put(`${BASE_URL}/profile/update`, dataToSend);
+
+      dispatch(addUser(response.data.data)); // backend sends { message, data }
       successToaster("Profile updated successfully!");
       setHasChanges(false);
     } catch (error) {
-      errorToaster("Failed to update profile");
       console.error("Error updating profile:", error);
+      const msg =
+        error.response?.data?.error || "Failed to update profile. Try again.";
+      errorToaster(msg);
     } finally {
       setIsSaving(false);
       setShowConfirmModal(false);
     }
   };
 
-  // ✅ Watch for changes in form data
+  // ✅ Detect if there are any changes
   useEffect(() => {
     if (user) {
       const changes = getChangedFields(user, formData);
@@ -71,7 +73,7 @@ const ProfilePage = () => {
     }
   }, [formData, user]);
 
-  // ✅ Sync with Redux user
+  // ✅ Reset formData when Redux user changes
   useEffect(() => {
     if (user) {
       setFormData({
@@ -88,6 +90,7 @@ const ProfilePage = () => {
     }
   }, [user]);
 
+  // ✅ Handle form field changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -96,6 +99,7 @@ const ProfilePage = () => {
     }));
   };
 
+  // ✅ Hobby Add/Remove
   const handleAddHobby = () => {
     if (newHobby.trim() && !formData.hobbies.includes(newHobby.trim())) {
       setFormData((prev) => ({
@@ -113,6 +117,7 @@ const ProfilePage = () => {
     }));
   };
 
+  // ✅ Cancel changes
   const handleCancel = () => {
     setFormData({
       firstName: user.firstName || "",
@@ -127,6 +132,7 @@ const ProfilePage = () => {
     setHasChanges(false);
   };
 
+  // ✅ Loading state (no user data yet)
   if (!user) {
     return (
       <Curve>
@@ -143,7 +149,9 @@ const ProfilePage = () => {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-primary mb-2">My Profile</h1>
-            <p className="text-base-content/70">Manage your personal information</p>
+            <p className="text-base-content/70">
+              Manage your personal information
+            </p>
           </div>
 
           <div className="card bg-base-200 shadow-2xl">
@@ -180,9 +188,12 @@ const ProfilePage = () => {
                 {/* Info Section */}
                 <div className="flex-grow">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* First Name */}
                     <div className="form-control">
                       <label className="label">
-                        <span className="label-text font-semibold">First Name</span>
+                        <span className="label-text font-semibold">
+                          First Name
+                        </span>
                       </label>
                       <input
                         type="text"
@@ -194,9 +205,12 @@ const ProfilePage = () => {
                       />
                     </div>
 
+                    {/* Last Name */}
                     <div className="form-control">
                       <label className="label">
-                        <span className="label-text font-semibold">Last Name</span>
+                        <span className="label-text font-semibold">
+                          Last Name
+                        </span>
                       </label>
                       <input
                         type="text"
@@ -208,6 +222,7 @@ const ProfilePage = () => {
                       />
                     </div>
 
+                    {/* Email (read-only) */}
                     <div className="form-control">
                       <label className="label">
                         <span className="label-text font-semibold">Email</span>
@@ -216,11 +231,12 @@ const ProfilePage = () => {
                         type="email"
                         name="emailId"
                         value={formData.emailId}
-                        disabled
+                        readOnly
                         className="input input-bordered w-full bg-base-100 cursor-not-allowed opacity-70"
                       />
                     </div>
 
+                    {/* Age */}
                     <div className="form-control">
                       <label className="label">
                         <span className="label-text font-semibold">Age</span>
@@ -237,6 +253,7 @@ const ProfilePage = () => {
                       />
                     </div>
 
+                    {/* Gender */}
                     <div className="form-control">
                       <label className="label">
                         <span className="label-text font-semibold">Gender</span>
@@ -254,9 +271,12 @@ const ProfilePage = () => {
                       </select>
                     </div>
 
+                    {/* Member Since */}
                     <div className="form-control">
                       <label className="label">
-                        <span className="label-text font-semibold">Member Since</span>
+                        <span className="label-text font-semibold">
+                          Member Since
+                        </span>
                       </label>
                       <div className="p-3 bg-base-100 rounded-lg border">
                         {new Date(user?.createdAt).toLocaleDateString("en-US", {
@@ -268,7 +288,7 @@ const ProfilePage = () => {
                     </div>
                   </div>
 
-                  {/* About */}
+                  {/* About Me */}
                   <div className="form-control mt-6">
                     <label className="label">
                       <span className="label-text font-semibold">About Me</span>
@@ -285,7 +305,9 @@ const ProfilePage = () => {
                   {/* Hobbies */}
                   <div className="form-control mt-6">
                     <label className="label">
-                      <span className="label-text font-semibold">Hobbies & Interests</span>
+                      <span className="label-text font-semibold">
+                        Hobbies & Interests
+                      </span>
                     </label>
                     <div>
                       <div className="flex gap-2 mb-3">
@@ -295,7 +317,9 @@ const ProfilePage = () => {
                           onChange={(e) => setNewHobby(e.target.value)}
                           className="input input-bordered flex-1"
                           placeholder="Add a hobby..."
-                          onKeyPress={(e) => e.key === "Enter" && handleAddHobby()}
+                          onKeyDown={(e) =>
+                            e.key === "Enter" && handleAddHobby()
+                          }
                         />
                         <button
                           type="button"
@@ -307,7 +331,10 @@ const ProfilePage = () => {
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {formData.hobbies.map((hobby, index) => (
-                          <div key={index} className="badge badge-primary gap-2 p-3">
+                          <div
+                            key={index}
+                            className="badge badge-primary gap-2 p-3"
+                          >
                             {hobby}
                             <button
                               type="button"
@@ -322,7 +349,7 @@ const ProfilePage = () => {
                     </div>
                   </div>
 
-                  {/* ✅ Buttons */}
+                  {/* ✅ Action Buttons */}
                   <div className="flex justify-end gap-3 mt-10">
                     <button
                       className="btn btn-success"
@@ -349,7 +376,7 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* ✅ Confirmation Modal */}
+      {/* ✅ Confirm Save Modal */}
       {showConfirmModal && (
         <dialog open className="modal modal-open">
           <div className="modal-box">
