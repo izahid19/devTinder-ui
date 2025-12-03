@@ -65,9 +65,9 @@ const UserCard = ({ user }) => {
           </button>
           <button
             className="btn btn-error text-white"
-            onClick={() => handleSendRequest("rejected", user?._id)}
+            onClick={() => handleSendRequest("ignored", user?._id)}
           >
-            Rejected
+            Ignore
           </button>
         </div>
       </div>
